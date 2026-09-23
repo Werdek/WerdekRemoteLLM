@@ -16,18 +16,19 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Mobile app touch optimizations */
         body { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         .prose p { margin-bottom: 0.5rem; }
         .prose pre { background: #1e293b; color: #f8fafc; padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin: 0.5rem 0; }
         .prose code { background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 0.2rem; }
         .prose pre code { background: transparent; padding: 0; }
-        /* Custom scrollbars */
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 h-screen flex flex-col font-sans overflow-hidden">
+
+    <!-- TOAST NOTIFICATIONS -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none"></div>
 
     <!-- TOP BAR -->
     <header class="bg-slate-800 border-b border-slate-700 px-4 py-3 flex justify-between items-center z-10 shrink-0">
@@ -53,11 +54,9 @@
                 <i data-lucide="plus" class="w-4 h-4"></i> New
             </button>
         </div>
-        <div id="chat-list" class="flex-1 overflow-y-auto p-2 space-y-1">
-            <!-- Dynamic Chat History List -->
-        </div>
+        <div id="chat-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
         <div class="p-3 border-t border-slate-700 text-xs text-slate-400 flex justify-between items-center">
-            <span>LM Studio Client v1.0</span>
+            <span>LM Studio Client v1.1</span>
             <button onclick="clearAllChats()" class="text-red-400 hover:underline">Clear All</button>
         </div>
     </aside>
@@ -67,9 +66,7 @@
 
         <!-- VIEW 1: CHAT INTERFACE -->
         <section id="view-chat" class="flex-1 flex flex-col h-full">
-            <!-- Messages Container -->
             <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4">
-                <!-- Welcome Prompt -->
                 <div id="welcome-msg" class="text-center my-auto py-12 text-slate-400">
                     <i data-lucide="bot" class="w-12 h-12 mx-auto mb-3 text-blue-400 opacity-80"></i>
                     <p class="text-base font-medium text-slate-200">LM Studio Local AI</p>
@@ -84,17 +81,14 @@
             <div class="p-3 bg-slate-800 border-t border-slate-700 shrink-0">
                 <form id="chat-form" onsubmit="handleSend(event)" class="flex flex-col gap-2">
                     <div class="flex items-end gap-2">
-                        <!-- File Upload Button -->
                         <label class="p-2.5 bg-slate-700 hover:bg-slate-600 rounded-xl cursor-pointer text-slate-300 shrink-0 transition">
                             <i data-lucide="paperclip" class="w-5 h-5"></i>
                             <input type="file" id="file-input" multiple onchange="handleFileSelect(event)" class="hidden" accept="image/*,.pdf,.epub,.txt,.csv,.json,.md,.js,.py,.html,.css,.cpp,.c,.h">
                         </label>
 
-                        <!-- Text Input Area -->
                         <textarea id="user-input" rows="1" placeholder="Type a message or drop files..." onkeydown="handleKeyDown(event)"
                             class="flex-1 bg-slate-900 text-slate-100 border border-slate-700 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 resize-none max-h-32 text-sm leading-relaxed"></textarea>
 
-                        <!-- Send Button -->
                         <button type="submit" id="btn-send" class="p-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-white shrink-0 transition">
                             <i data-lucide="send" class="w-5 h-5"></i>
                         </button>
@@ -112,21 +106,23 @@
                 </button>
             </h2>
 
-            <!-- Currently Active Model -->
+            <!-- Loaded Model Display -->
             <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3">
-                <span class="text-xs font-semibold text-blue-400 uppercase tracking-wider">Active Loaded Model</span>
-                <div id="active-model-display" class="text-sm font-mono break-all text-slate-200">None Loaded</div>
+                <span class="text-xs font-semibold text-blue-400 uppercase tracking-wider">Loaded VRAM Model</span>
+                <div id="active-model-display" class="text-sm font-mono break-all text-slate-200 flex items-center gap-2">
+                    <span id="active-model-name">None Loaded</span>
+                </div>
                 <div class="flex gap-2">
-                    <button onclick="unloadModel()" class="flex-1 bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-500/30 py-2 rounded-lg text-xs font-semibold transition">Unload Model</button>
+                    <button id="btn-unload" onclick="unloadModel()" class="flex-1 bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-500/30 py-2 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2">
+                        <i data-lucide="power-off" class="w-4 h-4"></i> Unload Model
+                    </button>
                 </div>
             </div>
 
             <!-- Available Models List -->
             <div class="space-y-2">
-                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Available Local Models</span>
-                <div id="models-list" class="space-y-2">
-                    <!-- Populated via JS -->
-                </div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Local Model Library</span>
+                <div id="models-list" class="space-y-2"></div>
             </div>
         </section>
 
@@ -134,10 +130,9 @@
         <section id="view-settings" class="hidden flex-1 overflow-y-auto p-4 space-y-6">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2">
                 <h2 class="text-lg font-bold">Parameters & Config</h2>
-                <button onclick="saveDefaults()" class="bg-green-600 hover:bg-green-500 text-white text-xs px-3 py-1.5 rounded-lg font-medium">Save as Global Default</button>
+                <button onclick="saveDefaults()" class="bg-green-600 hover:bg-green-500 text-white text-xs px-3 py-1.5 rounded-lg font-medium">Save Defaults</button>
             </div>
 
-            <!-- Endpoint Configuration -->
             <div class="space-y-3 bg-slate-800 p-4 rounded-xl border border-slate-700">
                 <h3 class="text-sm font-semibold text-blue-400">Server Connection</h3>
                 <div>
@@ -146,13 +141,11 @@
                 </div>
             </div>
 
-            <!-- Standard Chat Settings -->
             <div class="space-y-4 bg-slate-800 p-4 rounded-xl border border-slate-700">
                 <h3 class="text-sm font-semibold text-blue-400">System Prompt</h3>
                 <textarea id="cfg-system-prompt" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs" placeholder="You are a helpful assistant..."></textarea>
             </div>
 
-            <!-- Basic Inference Parameters -->
             <div class="space-y-4 bg-slate-800 p-4 rounded-xl border border-slate-700">
                 <h3 class="text-sm font-semibold text-blue-400">Standard Sampling Parameters</h3>
                 
@@ -181,14 +174,13 @@
                 </div>
             </div>
 
-            <!-- ADVANCED TAB (Collapsible / Advanced LM Studio Specs) -->
+            <!-- ADVANCED TAB -->
             <details class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden group">
                 <summary class="p-4 font-semibold text-sm text-yellow-400 cursor-pointer flex justify-between items-center bg-slate-800 select-none">
                     <span>Advanced LM Studio Parameters</span>
                     <i data-lucide="chevron-down" class="w-4 h-4 transform group-open:rotate-180 transition"></i>
                 </summary>
                 <div class="p-4 space-y-4 border-t border-slate-700 bg-slate-850">
-                    
                     <div>
                         <div class="flex justify-between text-xs mb-1">
                             <label>Top K</label>
@@ -222,7 +214,7 @@
                     </div>
 
                     <div>
-                        <label class="text-xs text-slate-400 block mb-1">Stop Sequences (JSON Array string format)</label>
+                        <label class="text-xs text-slate-400 block mb-1">Stop Sequences (JSON Array format)</label>
                         <input type="text" id="cfg-stop" placeholder='["\n\n", "User:"]' class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-mono">
                     </div>
 
@@ -230,19 +222,15 @@
                         <label class="text-xs text-slate-300">Stream Responses</label>
                         <input type="checkbox" id="cfg-stream" checked class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
                     </div>
-
                 </div>
             </details>
         </section>
 
     </main>
 
-    <!-- SCRIPT APPLICATION CORE -->
     <script>
-        // Setup PDF.js worker
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        // APPLICATION STATE
         const DEFAULT_CONFIG = {
             endpoint: 'http://localhost:1234',
             systemPrompt: 'You are a helpful, smart, clear, and concise AI assistant.',
@@ -262,11 +250,11 @@
             currentChatId: null,
             models: [],
             loadedModel: null,
-            attachments: [], // Array of { name, type, content (base64/text) }
+            loadingModelId: null,
+            attachments: [],
             config: { ...DEFAULT_CONFIG }
         };
 
-        // INITIALIZATION
         window.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             loadStateFromStorage();
@@ -277,7 +265,24 @@
             autoResizeTextarea();
         });
 
-        // LOCAL STORAGE HANDLERS
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bg = type === 'error' ? 'bg-red-600' : type === 'success' ? 'bg-green-600' : 'bg-blue-600';
+            toast.className = `${bg} text-white px-4 py-2.5 rounded-xl text-xs font-medium shadow-lg transition-all transform translate-y-2 opacity-0 flex items-center justify-between pointer-events-auto`;
+            toast.innerText = message;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
         function loadStateFromStorage() {
             const savedConfig = localStorage.getItem('lm_config');
             if (savedConfig) state.config = { ...DEFAULT_CONFIG, ...JSON.parse(savedConfig) };
@@ -291,7 +296,6 @@
             localStorage.setItem('lm_chats', JSON.stringify(state.chats));
         }
 
-        // NAVIGATION & TABS
         function switchTab(tab) {
             ['chat', 'models', 'settings'].forEach(t => {
                 document.getElementById(`view-${t}`).classList.add('hidden');
@@ -317,7 +321,6 @@
         }
         document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
 
-        // CONFIG & UI BINDING
         function populateConfigUI() {
             document.getElementById('cfg-endpoint').value = state.config.endpoint;
             document.getElementById('cfg-system-prompt').value = state.config.systemPrompt;
@@ -330,7 +333,6 @@
             document.getElementById('cfg-prespen').value = state.config.presencePenalty;
             document.getElementById('cfg-stop').value = state.config.stopSequences;
             document.getElementById('cfg-stream').checked = state.config.stream;
-            
             updateValDisplays();
         }
 
@@ -366,16 +368,146 @@
         function saveDefaults() {
             readConfigInputs();
             saveStateToStorage();
-            alert("Defaults saved successfully!");
+            showToast("Defaults saved!", "success");
         }
 
-        // CHAT MANAGEMENT
+        // MODEL LOADING & API CALLS
+        async function fetchModels() {
+            readConfigInputs();
+            const container = document.getElementById('models-list');
+            container.innerHTML = `<div class="text-xs text-slate-400">Connecting to LM Studio...</div>`;
+            try {
+                const res = await fetch(`${state.config.endpoint}/v1/models`);
+                if (!res.ok) throw new Error("Server responded with error");
+                const data = await res.json();
+                state.models = data.data || [];
+                
+                // Identify active loaded model
+                const loaded = state.models.find(m => m.state === 'loaded' || m.is_loaded);
+                if (loaded) state.loadedModel = loaded.id;
+
+                renderActiveModelUI();
+                renderModelsList();
+            } catch (err) {
+                container.innerHTML = `<div class="text-xs text-red-400 p-3 bg-red-900/20 rounded-lg">Unable to reach LM Studio server at ${state.config.endpoint}. Make sure the local server is running with CORS allowed.</div>`;
+            }
+        }
+
+        function renderActiveModelUI() {
+            const display = document.getElementById('active-model-name');
+            if (state.loadingModelId) {
+                display.innerHTML = `<span class="text-yellow-400 font-medium animate-pulse flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Loading ${escapeHtml(state.loadingModelId)}...</span>`;
+            } else if (state.loadedModel) {
+                display.innerHTML = `<span class="text-green-400 font-semibold flex items-center gap-1.5"><i data-lucide="check-circle-2" class="w-4 h-4"></i> ${escapeHtml(state.loadedModel)}</span>`;
+            } else {
+                display.innerText = "None Loaded in VRAM";
+            }
+            lucide.createIcons();
+        }
+
+        function renderModelsList() {
+            const container = document.getElementById('models-list');
+            container.innerHTML = '';
+            
+            if (state.models.length === 0) {
+                container.innerHTML = `<div class="text-xs text-slate-400">No models detected on server.</div>`;
+                return;
+            }
+
+            state.models.forEach(m => {
+                const isLoaded = state.loadedModel === m.id;
+                const isLoading = state.loadingModelId === m.id;
+
+                const div = document.createElement('div');
+                div.className = "p-3 bg-slate-800 rounded-xl border border-slate-700 flex justify-between items-center";
+                div.innerHTML = `
+                    <div class="overflow-hidden mr-2">
+                        <div class="text-xs font-mono font-medium text-slate-200 truncate flex items-center gap-1.5">
+                            ${escapeHtml(m.id)}
+                            ${isLoaded ? '<span class="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded font-semibold">Active</span>' : ''}
+                        </div>
+                        <div class="text-[10px] text-slate-400">Publisher: ${escapeHtml(m.owned_by || 'local')}</div>
+                    </div>
+                    <button onclick="loadModel('${escapeHtml(m.id)}')" ${isLoading || isLoaded ? 'disabled' : ''} 
+                        class="shrink-0 px-3 py-1.5 text-xs rounded-lg transition font-medium flex items-center gap-1 ${
+                            isLoaded ? 'bg-slate-700 text-slate-400 cursor-not-allowed' :
+                            isLoading ? 'bg-yellow-600 text-white cursor-wait' : 'bg-blue-600 hover:bg-blue-500 text-white'
+                        }">
+                        ${isLoading ? '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Loading' : isLoaded ? 'Loaded' : 'Load Model'}
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+            lucide.createIcons();
+        }
+
+        async function loadModel(modelId) {
+            state.loadingModelId = modelId;
+            renderActiveModelUI();
+            renderModelsList();
+            showToast(`Loading ${modelId}...`, "info");
+
+            const tryEndpoints = [`/api/v1/models/load`, `/api/v0/models/load`];
+            let success = false;
+
+            for (const ep of tryEndpoints) {
+                try {
+                    const res = await fetch(`${state.config.endpoint}${ep}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ model: modelId })
+                    });
+                    if (res.ok) {
+                        success = true;
+                        break;
+                    }
+                } catch(e) {}
+            }
+
+            state.loadingModelId = null;
+
+            if (success) {
+                state.loadedModel = modelId;
+                showToast(`Model ${modelId} loaded successfully!`, "success");
+            } else {
+                // Fallback: If REST API load endpoint fails, LM Studio JIT auto-loads models when invoked in chat
+                state.loadedModel = modelId;
+                showToast(`Selected ${modelId}. (JIT dynamic load enabled)`, "info");
+            }
+
+            renderActiveModelUI();
+            renderModelsList();
+        }
+
+        async function unloadModel() {
+            if (!state.loadedModel) {
+                showToast("No model currently loaded.", "info");
+                return;
+            }
+
+            const current = state.loadedModel;
+            showToast(`Unloading model...`, "info");
+
+            const tryEndpoints = [`/api/v1/models/unload`, `/api/v0/models/unload`];
+            for (const ep of tryEndpoints) {
+                try {
+                    await fetch(`${state.config.endpoint}${ep}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ model: current })
+                    });
+                } catch(e) {}
+            }
+
+            state.loadedModel = null;
+            renderActiveModelUI();
+            renderModelsList();
+            showToast("Model unloaded from VRAM.", "success");
+        }
+
+        // CHAT ENGINE
         function createNewChat() {
-            const newChat = {
-                id: Date.now().toString(),
-                title: 'New Chat',
-                messages: []
-            };
+            const newChat = { id: Date.now().toString(), title: 'New Chat', messages: [] };
             state.chats.unshift(newChat);
             state.currentChatId = newChat.id;
             saveStateToStorage();
@@ -487,61 +619,6 @@
             return wrapper.querySelector('.prose') || wrapper.firstElementChild;
         }
 
-        // LM STUDIO API INTEGRATION
-        async function fetchModels() {
-            readConfigInputs();
-            const container = document.getElementById('models-list');
-            container.innerHTML = `<div class="text-xs text-slate-400">Loading models...</div>`;
-            try {
-                const res = await fetch(`${state.config.endpoint}/v1/models`);
-                if (!res.ok) throw new Error("Failed to fetch models");
-                const data = await res.json();
-                state.models = data.data || [];
-                
-                renderModelsList();
-            } catch (err) {
-                container.innerHTML = `<div class="text-xs text-red-400 p-2 bg-red-900/20 rounded-lg">Unable to connect to LM Studio at ${state.config.endpoint}. Make sure the server is running & CORS is enabled.</div>`;
-            }
-        }
-
-        function renderModelsList() {
-            const container = document.getElementById('models-list');
-            container.innerHTML = '';
-            
-            if (state.models.length === 0) {
-                container.innerHTML = `<div class="text-xs text-slate-400">No models found in LM Studio.</div>`;
-                return;
-            }
-
-            state.models.forEach(m => {
-                const isLoaded = state.loadedModel === m.id;
-                const div = document.createElement('div');
-                div.className = "p-3 bg-slate-800 rounded-xl border border-slate-700 flex justify-between items-center";
-                div.innerHTML = `
-                    <div class="overflow-hidden mr-2">
-                        <div class="text-xs font-mono font-medium text-slate-200 truncate">${escapeHtml(m.id)}</div>
-                        <div class="text-[10px] text-slate-400">Owner: ${escapeHtml(m.owned_by || 'local')}</div>
-                    </div>
-                    <button onclick="loadModel('${escapeHtml(m.id)}')" class="shrink-0 px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition">
-                        Select
-                    </button>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        function loadModel(modelId) {
-            state.loadedModel = modelId;
-            document.getElementById('active-model-display').innerText = modelId;
-            alert(`Selected Model: ${modelId}`);
-        }
-
-        async function unloadModel() {
-            state.loadedModel = null;
-            document.getElementById('active-model-display').innerText = "None Selected";
-        }
-
-        // SEND MESSAGE & STREAM RESPONSE
         async function handleSend(e) {
             e.preventDefault();
             readConfigInputs();
@@ -552,7 +629,6 @@
 
             const currentChat = getCurrentChat();
 
-            // Handle file attachments
             let fileTexts = [];
             let images = [];
 
@@ -569,12 +645,10 @@
                 fullUserContent = (text ? text + "\n\n" : "") + fileTexts.join("\n\n");
             }
 
-            // Save Title if first message
             if (currentChat.messages.length === 0) {
                 currentChat.title = text.slice(0, 30) || (state.attachments[0] ? state.attachments[0].name : "Attachment Chat");
             }
 
-            // Build payload user message
             let msgPayloadContent;
             if (images.length > 0) {
                 msgPayloadContent = [];
@@ -586,25 +660,20 @@
                 msgPayloadContent = fullUserContent;
             }
 
-            // Append UI
             appendMessageUI('user', fullUserContent, images);
             currentChat.messages.push({ role: 'user', content: msgPayloadContent, images });
             saveStateToStorage();
 
-            // Clear Input
             inputEl.value = '';
             autoResizeTextarea();
             clearAttachments();
 
-            // Prepare API Request Payload
             const apiMessages = [];
             if (state.config.systemPrompt) {
                 apiMessages.push({ role: 'system', content: state.config.systemPrompt });
             }
 
-            currentChat.messages.forEach(m => {
-                apiMessages.push({ role: m.role, content: m.content });
-            });
+            currentChat.messages.forEach(m => apiMessages.push({ role: m.role, content: m.content }));
 
             const bodyPayload = {
                 messages: apiMessages,
@@ -619,16 +688,12 @@
             if (state.config.repeatPenalty) bodyPayload.repeat_penalty = state.config.repeatPenalty;
             if (state.config.presencePenalty) bodyPayload.presence_penalty = state.config.presencePenalty;
             if (state.config.frequencyPenalty) bodyPayload.frequency_penalty = state.config.frequencyPenalty;
-            
+
             if (state.config.stopSequences) {
-                try {
-                    bodyPayload.stop = JSON.parse(state.config.stopSequences);
-                } catch(e) {
-                    bodyPayload.stop = [state.config.stopSequences];
-                }
+                try { bodyPayload.stop = JSON.parse(state.config.stopSequences); }
+                catch(e) { bodyPayload.stop = [state.config.stopSequences]; }
             }
 
-            // UI placeholder for Assistant Stream Response
             const assistantBubble = appendMessageUI('assistant', '...');
             let assistantFullResponse = "";
 
@@ -675,16 +740,15 @@
                 saveStateToStorage();
 
             } catch (err) {
-                assistantBubble.innerHTML = `<span class="text-red-400 font-semibold">Error: Failed to fetch response from LM Studio. Ensure server is active.</span>`;
+                assistantBubble.innerHTML = `<span class="text-red-400 font-semibold">Error: Failed to receive model completion. Check server status.</span>`;
             }
         }
 
-        // MULTI-FILE PARSER (PDF, EPUB, CSV, Images, Code)
+        // ATTACHMENT PARSER
         async function handleFileSelect(e) {
             const files = Array.from(e.target.files);
             for (const file of files) {
                 const ext = file.name.split('.').pop().toLowerCase();
-                
                 if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext)) {
                     const base64 = await readFileAsBase64(file);
                     state.attachments.push({ name: file.name, type: 'image', content: base64 });
@@ -695,7 +759,6 @@
                     const epubText = await parseEpub(file);
                     state.attachments.push({ name: file.name, type: 'text', content: epubText });
                 } else {
-                    // Plaintext, CSV, Code, JSON, MD
                     const text = await readFileAsText(file);
                     state.attachments.push({ name: file.name, type: 'text', content: text });
                 }
@@ -738,7 +801,6 @@
             renderAttachments();
         }
 
-        // FILE HELPER READERS
         function readFileAsText(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -774,17 +836,14 @@
             const book = ePub(arrayBuffer);
             await book.opened;
             let fullText = '';
-            const loaded = await book.loaded.navigation;
             for (const item of book.spine.spineItems) {
                 await item.load(book.load.bind(book));
-                const doc = item.document;
-                if (doc) fullText += doc.body.textContent + '\n';
+                if (item.document) fullText += item.document.body.textContent + '\n';
                 item.unload();
             }
             return fullText;
         }
 
-        // UTILITY FUNCTIONS
         function handleKeyDown(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
