@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -11,6 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
         body { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         .prose p { margin-bottom: 0.5rem; }
         .prose pre { background: #1e293b; color: #f8fafc; padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin: 0.5rem 0; }
@@ -20,12 +21,12 @@
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 h-screen flex flex-col font-sans overflow-hidden">
+<body class="bg-slate-900 text-slate-100 h-full flex flex-col font-sans">
 
     <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none"></div>
 
     <!-- TOP BAR -->
-    <header class="bg-slate-800 border-b border-slate-700 px-4 py-3 flex justify-between items-center z-10 shrink-0">
+    <header class="bg-slate-800 border-b border-slate-700 px-4 py-3 flex justify-between items-center shrink-0 z-20">
         <div class="flex items-center space-x-2">
             <button id="sidebar-toggle" class="p-1.5 hover:bg-slate-700 rounded-lg text-slate-300">
                 <i data-lucide="menu" class="w-6 h-6"></i>
@@ -40,8 +41,8 @@
     </header>
 
     <!-- SIDEBAR -->
-    <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-20 hidden backdrop-blur-sm" onclick="toggleSidebar()"></div>
-    <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-slate-800 z-30 transform -translate-x-full transition-transform duration-200 ease-in-out flex flex-col border-r border-slate-700">
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 hidden backdrop-blur-sm" onclick="toggleSidebar()"></div>
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-slate-800 z-40 transform -translate-x-full transition-transform duration-200 ease-in-out flex flex-col border-r border-slate-700">
         <div class="p-4 border-b border-slate-700 flex justify-between items-center">
             <h2 class="font-bold text-lg text-slate-100">Chat History</h2>
             <button onclick="createNewChat()" class="p-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-white flex items-center text-xs gap-1">
@@ -50,16 +51,17 @@
         </div>
         <div id="chat-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
         <div class="p-3 border-t border-slate-700 text-xs text-slate-400 flex justify-between items-center">
-            <span>LM Studio Client v1.3</span>
+            <span>LM Studio Client v1.4</span>
             <button onclick="clearAllChats()" class="text-red-400 hover:underline">Clear All</button>
         </div>
     </aside>
 
-    <!-- MAIN VIEW CONTAINER -->
-    <main class="flex-1 relative overflow-hidden flex flex-col">
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 relative overflow-hidden flex flex-col min-h-0">
 
         <!-- VIEW 1: CHAT INTERFACE -->
-        <section id="view-chat" class="flex-1 flex flex-col h-full">
+        <section id="view-chat" class="flex-1 flex flex-col min-h-0 h-full overflow-hidden">
+            <!-- Messages Scrollable Body -->
             <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4">
                 <div id="welcome-msg" class="text-center my-auto py-12 text-slate-400">
                     <i data-lucide="bot" class="w-12 h-12 mx-auto mb-3 text-blue-400 opacity-80"></i>
@@ -68,9 +70,11 @@
                 </div>
             </div>
 
-            <div id="attachment-preview" class="px-4 py-2 bg-slate-800/80 border-t border-slate-700 hidden flex flex-wrap gap-2"></div>
+            <!-- Attachment Preview Area -->
+            <div id="attachment-preview" class="px-4 py-2 bg-slate-800/90 border-t border-slate-700 hidden flex flex-wrap gap-2 shrink-0"></div>
 
-            <div class="p-3 bg-slate-800 border-t border-slate-700 shrink-0">
+            <!-- Pinned Input Form -->
+            <div class="p-3 bg-slate-800 border-t border-slate-700 shrink-0 w-full z-10">
                 <form id="chat-form" onsubmit="handleSend(event)" class="flex flex-col gap-2">
                     <div class="flex items-end gap-2">
                         <label class="p-2.5 bg-slate-700 hover:bg-slate-600 rounded-xl cursor-pointer text-slate-300 shrink-0 transition">
@@ -81,7 +85,7 @@
                         <textarea id="user-input" rows="1" placeholder="Type a message or drop files..." onkeydown="handleKeyDown(event)"
                             class="flex-1 bg-slate-900 text-slate-100 border border-slate-700 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 resize-none max-h-32 text-sm leading-relaxed"></textarea>
 
-                        <button type="submit" id="btn-send" class="p-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-white shrink-0 transition">
+                        <button type="submit" id="btn-send" class="p-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-white shrink-0 transition flex items-center justify-center">
                             <i data-lucide="send" class="w-5 h-5"></i>
                         </button>
                     </div>
@@ -135,7 +139,7 @@
                 <h3 class="text-sm font-semibold text-blue-400">Server Connection</h3>
                 <div>
                     <label class="text-xs text-slate-400 block mb-1">LM Studio Server Base URL</label>
-                    <input type="text" id="cfg-endpoint" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-mono" placeholder="http://localhost:1234 or http://192.168.x.x:1234">
+                    <input type="text" id="cfg-endpoint" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-mono" placeholder="http://localhost:1234">
                 </div>
             </div>
 
@@ -434,7 +438,6 @@
             showToast(`Model unloaded.`, "success");
         }
 
-        // CHAT CONTROLLER
         function createNewChat() {
             const newChat = { id: Date.now().toString(), title: 'New Chat', messages: [] };
             state.chats.unshift(newChat);
@@ -503,8 +506,8 @@
             
             if (chat.messages.length === 0) {
                 container.innerHTML = `
-                    <div id="welcome-msg" class="text-center my-auto py-12 text-slate-400">
-                        <i data-lucide="bot" class="w-12 h-12 mx-auto mb-3 text-blue-400 opacity-80"></i>
+                    <div id="welcome-msg" class="text-center my-auto py-12 text-slate-400 flex flex-col items-center justify-center h-full">
+                        <i data-lucide="bot" class="w-12 h-12 mb-3 text-blue-400 opacity-80"></i>
                         <p class="text-base font-medium text-slate-200">LM Studio Local AI</p>
                         <p class="text-xs mt-1">Ready to chat! Type a message below to start.</p>
                     </div>`;
@@ -606,7 +609,6 @@
             const assistantBubble = appendMessageUI('assistant', '<i>Thinking...</i>');
 
             try {
-                // Fetch with no-cors / standard handling
                 const res = await fetch(`${state.config.endpoint}/v1/chat/completions`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -615,7 +617,7 @@
 
                 if (!res.ok) {
                     const errText = await res.text();
-                    throw new Error(`Server returned status ${res.status}: ${errText}`);
+                    throw new Error(`Server status ${res.status}: ${errText}`);
                 }
 
                 const data = await res.json();
@@ -626,7 +628,7 @@
                 saveStateToStorage();
 
             } catch (err) {
-                assistantBubble.innerHTML = `<span class="text-red-400 font-semibold">CORS/Network Error: Could not talk to LM Studio.<br><span class="text-xs text-slate-300">Ensure "Enable CORS" is ON in LM Studio server settings. (${escapeHtml(err.message)})</span></span>`;
+                assistantBubble.innerHTML = `<span class="text-red-400 font-semibold">Error: Could not process request.<br><span class="text-xs text-slate-300">(${escapeHtml(err.message)})</span></span>`;
             }
         }
 
