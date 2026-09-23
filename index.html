@@ -3,17 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LM Studio Mobile Web Client</title>
-    <!-- Tailwind CSS CDN -->
+    <title>LM Studio Web Client</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Marked.js for Markdown Rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- PDF.js for PDF Parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <!-- JSZip & ePub.js for EPUB Parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
@@ -27,7 +22,6 @@
 </head>
 <body class="bg-slate-900 text-slate-100 h-screen flex flex-col font-sans overflow-hidden">
 
-    <!-- TOAST NOTIFICATIONS -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none"></div>
 
     <!-- TOP BAR -->
@@ -45,7 +39,7 @@
         </div>
     </header>
 
-    <!-- SIDEBAR (Chat History) -->
+    <!-- SIDEBAR -->
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-20 hidden backdrop-blur-sm" onclick="toggleSidebar()"></div>
     <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-slate-800 z-30 transform -translate-x-full transition-transform duration-200 ease-in-out flex flex-col border-r border-slate-700">
         <div class="p-4 border-b border-slate-700 flex justify-between items-center">
@@ -56,12 +50,12 @@
         </div>
         <div id="chat-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
         <div class="p-3 border-t border-slate-700 text-xs text-slate-400 flex justify-between items-center">
-            <span>LM Studio Client v1.2</span>
+            <span>LM Studio Client v1.3</span>
             <button onclick="clearAllChats()" class="text-red-400 hover:underline">Clear All</button>
         </div>
     </aside>
 
-    <!-- MAIN CONTENT CONTAINER -->
+    <!-- MAIN VIEW CONTAINER -->
     <main class="flex-1 relative overflow-hidden flex flex-col">
 
         <!-- VIEW 1: CHAT INTERFACE -->
@@ -70,20 +64,18 @@
                 <div id="welcome-msg" class="text-center my-auto py-12 text-slate-400">
                     <i data-lucide="bot" class="w-12 h-12 mx-auto mb-3 text-blue-400 opacity-80"></i>
                     <p class="text-base font-medium text-slate-200">LM Studio Local AI</p>
-                    <p class="text-xs mt-1">Make sure LM Studio local server is running with CORS enabled.</p>
+                    <p class="text-xs mt-1">Ready to chat! Type a message below to start.</p>
                 </div>
             </div>
 
-            <!-- Attachment Preview Area -->
             <div id="attachment-preview" class="px-4 py-2 bg-slate-800/80 border-t border-slate-700 hidden flex flex-wrap gap-2"></div>
 
-            <!-- Input Controls Footer -->
             <div class="p-3 bg-slate-800 border-t border-slate-700 shrink-0">
                 <form id="chat-form" onsubmit="handleSend(event)" class="flex flex-col gap-2">
                     <div class="flex items-end gap-2">
                         <label class="p-2.5 bg-slate-700 hover:bg-slate-600 rounded-xl cursor-pointer text-slate-300 shrink-0 transition">
                             <i data-lucide="paperclip" class="w-5 h-5"></i>
-                            <input type="file" id="file-input" multiple onchange="handleFileSelect(event)" class="hidden" accept="image/*,.pdf,.epub,.txt,.csv,.json,.md,.js,.py,.html,.css,.cpp,.c,.h">
+                            <input type="file" id="file-input" multiple onchange="handleFileSelect(event)" class="hidden" accept="image/*,.pdf,.epub,.txt,.csv,.json,.md,.js,.py,.html,.css">
                         </label>
 
                         <textarea id="user-input" rows="1" placeholder="Type a message or drop files..." onkeydown="handleKeyDown(event)"
@@ -106,7 +98,6 @@
                 </button>
             </h2>
 
-            <!-- Loaded Model Display -->
             <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3">
                 <span class="text-xs font-semibold text-blue-400 uppercase tracking-wider">Active Loaded VRAM Model</span>
                 <div id="active-model-display" class="text-sm font-mono break-all text-slate-200 flex items-center gap-2">
@@ -119,23 +110,21 @@
                 </div>
             </div>
 
-            <!-- Auto-Unload Toggle -->
             <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700 flex items-center justify-between">
                 <div>
                     <label class="text-xs font-medium text-slate-200 block">Auto Unload On Exit</label>
-                    <span class="text-[10px] text-slate-400 block">Unload model from VRAM when tab is closed</span>
+                    <span class="text-[10px] text-slate-400 block">Unload model from VRAM when browser tab closes</span>
                 </div>
                 <input type="checkbox" id="cfg-autounload" checked onchange="state.autoUnloadOnExit = this.checked" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-blue-600">
             </div>
 
-            <!-- Available Models List -->
             <div class="space-y-2">
                 <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Local Model Library</span>
                 <div id="models-list" class="space-y-2"></div>
             </div>
         </section>
 
-        <!-- VIEW 3: SETTINGS & PARAMETERS -->
+        <!-- VIEW 3: SETTINGS -->
         <section id="view-settings" class="hidden flex-1 overflow-y-auto p-4 space-y-6">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2">
                 <h2 class="text-lg font-bold">Parameters & Config</h2>
@@ -146,7 +135,7 @@
                 <h3 class="text-sm font-semibold text-blue-400">Server Connection</h3>
                 <div>
                     <label class="text-xs text-slate-400 block mb-1">LM Studio Server Base URL</label>
-                    <input type="text" id="cfg-endpoint" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-mono">
+                    <input type="text" id="cfg-endpoint" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-mono" placeholder="http://localhost:1234 or http://192.168.x.x:1234">
                 </div>
             </div>
 
@@ -156,7 +145,7 @@
             </div>
 
             <div class="space-y-4 bg-slate-800 p-4 rounded-xl border border-slate-700">
-                <h3 class="text-sm font-semibold text-blue-400">Standard Sampling Parameters</h3>
+                <h3 class="text-sm font-semibold text-blue-400">Sampling Parameters</h3>
                 
                 <div>
                     <div class="flex justify-between text-xs mb-1">
@@ -182,59 +171,7 @@
                     <input type="number" id="cfg-maxtokens" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs font-mono">
                 </div>
             </div>
-
-            <!-- ADVANCED TAB -->
-            <details class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden group">
-                <summary class="p-4 font-semibold text-sm text-yellow-400 cursor-pointer flex justify-between items-center bg-slate-800 select-none">
-                    <span>Advanced LM Studio Parameters</span>
-                    <i data-lucide="chevron-down" class="w-4 h-4 transform group-open:rotate-180 transition"></i>
-                </summary>
-                <div class="p-4 space-y-4 border-t border-slate-700 bg-slate-850">
-                    <div>
-                        <div class="flex justify-between text-xs mb-1">
-                            <label>Top K</label>
-                            <span id="val-topk" class="font-mono text-yellow-400">40</span>
-                        </div>
-                        <input type="range" id="cfg-topk" min="0" max="100" step="1" oninput="updateVal('topk')" class="w-full">
-                    </div>
-
-                    <div>
-                        <div class="flex justify-between text-xs mb-1">
-                            <label>Repeat Penalty</label>
-                            <span id="val-reppen" class="font-mono text-yellow-400">1.1</span>
-                        </div>
-                        <input type="range" id="cfg-reppen" min="1.0" max="2.0" step="0.02" oninput="updateVal('reppen')" class="w-full">
-                    </div>
-
-                    <div>
-                        <div class="flex justify-between text-xs mb-1">
-                            <label>Frequency Penalty</label>
-                            <span id="val-freqpen" class="font-mono text-yellow-400">0.0</span>
-                        </div>
-                        <input type="range" id="cfg-freqpen" min="-2.0" max="2.0" step="0.1" oninput="updateVal('freqpen')" class="w-full">
-                    </div>
-
-                    <div>
-                        <div class="flex justify-between text-xs mb-1">
-                            <label>Presence Penalty</label>
-                            <span id="val-prespen" class="font-mono text-yellow-400">0.0</span>
-                        </div>
-                        <input type="range" id="cfg-prespen" min="-2.0" max="2.0" step="0.1" oninput="updateVal('prespen')" class="w-full">
-                    </div>
-
-                    <div>
-                        <label class="text-xs text-slate-400 block mb-1">Stop Sequences (JSON Array format)</label>
-                        <input type="text" id="cfg-stop" placeholder='["\n\n", "User:"]' class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-mono">
-                    </div>
-
-                    <div class="flex items-center justify-between">
-                        <label class="text-xs text-slate-300">Stream Responses</label>
-                        <input type="checkbox" id="cfg-stream" checked class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
-                    </div>
-                </div>
-            </details>
         </section>
-
     </main>
 
     <script>
@@ -245,12 +182,7 @@
             systemPrompt: 'You are a helpful, smart, clear, and concise AI assistant.',
             temperature: 0.7,
             topP: 0.95,
-            topK: 40,
             maxTokens: -1,
-            repeatPenalty: 1.1,
-            frequencyPenalty: 0.0,
-            presencePenalty: 0.0,
-            stopSequences: '',
             stream: true
         };
 
@@ -275,7 +207,6 @@
             autoResizeTextarea();
         });
 
-        // Tab Unload Handler
         window.addEventListener('beforeunload', () => {
             if (state.autoUnloadOnExit && state.loadedModel) {
                 const ep = `${state.config.endpoint}/api/v1/models/unload`;
@@ -284,7 +215,7 @@
                     const blob = new Blob([payload], { type: 'application/json' });
                     navigator.sendBeacon(ep, blob);
                 } else {
-                    fetch(ep, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true });
+                    fetch(ep, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: payload, keepalive: true });
                 }
             }
         });
@@ -347,13 +278,7 @@
             document.getElementById('cfg-system-prompt').value = state.config.systemPrompt;
             document.getElementById('cfg-temp').value = state.config.temperature;
             document.getElementById('cfg-topp').value = state.config.topP;
-            document.getElementById('cfg-topk').value = state.config.topK;
             document.getElementById('cfg-maxtokens').value = state.config.maxTokens;
-            document.getElementById('cfg-reppen').value = state.config.repeatPenalty;
-            document.getElementById('cfg-freqpen').value = state.config.frequencyPenalty;
-            document.getElementById('cfg-prespen').value = state.config.presencePenalty;
-            document.getElementById('cfg-stop').value = state.config.stopSequences;
-            document.getElementById('cfg-stream').checked = state.config.stream;
             updateValDisplays();
         }
 
@@ -365,7 +290,7 @@
         }
 
         function updateValDisplays() {
-            ['temp', 'topp', 'topk', 'reppen', 'freqpen', 'prespen'].forEach(p => {
+            ['temp', 'topp'].forEach(p => {
                 const el = document.getElementById(`cfg-${p}`);
                 const disp = document.getElementById(`val-${p}`);
                 if (el && disp) disp.innerText = el.value;
@@ -377,13 +302,7 @@
             state.config.systemPrompt = document.getElementById('cfg-system-prompt').value;
             state.config.temperature = parseFloat(document.getElementById('cfg-temp').value);
             state.config.topP = parseFloat(document.getElementById('cfg-topp').value);
-            state.config.topK = parseInt(document.getElementById('cfg-topk').value);
             state.config.maxTokens = parseInt(document.getElementById('cfg-maxtokens').value);
-            state.config.repeatPenalty = parseFloat(document.getElementById('cfg-reppen').value);
-            state.config.frequencyPenalty = parseFloat(document.getElementById('cfg-freqpen').value);
-            state.config.presencePenalty = parseFloat(document.getElementById('cfg-prespen').value);
-            state.config.stopSequences = document.getElementById('cfg-stop').value;
-            state.config.stream = document.getElementById('cfg-stream').checked;
         }
 
         function saveDefaults() {
@@ -392,22 +311,18 @@
             showToast("Defaults saved!", "success");
         }
 
-        // MODEL MANAGEMENT & DIRECT STATE QUERY
         async function fetchModels() {
             readConfigInputs();
             const container = document.getElementById('models-list');
             container.innerHTML = `<div class="text-xs text-slate-400">Connecting to LM Studio...</div>`;
             try {
-                // Query standard /v1/models
                 const res = await fetch(`${state.config.endpoint}/v1/models`);
-                if (!res.ok) throw new Error("Server responded with error");
+                if (!res.ok) throw new Error("Server error");
                 const data = await res.json();
                 state.models = data.data || [];
                 
-                // Active Model Detection Strategy
                 let activeFound = null;
 
-                // Attempt Native API check
                 try {
                     const resNative = await fetch(`${state.config.endpoint}/api/v0/models`);
                     if (resNative.ok) {
@@ -427,7 +342,7 @@
                 renderActiveModelUI();
                 renderModelsList();
             } catch (err) {
-                container.innerHTML = `<div class="text-xs text-red-400 p-3 bg-red-900/20 rounded-lg">Unable to reach LM Studio server at ${state.config.endpoint}. Check if server is online with CORS allowed.</div>`;
+                container.innerHTML = `<div class="text-xs text-red-400 p-3 bg-red-900/20 rounded-lg">Unable to reach LM Studio at ${state.config.endpoint}. Verify CORS is enabled in LM Studio settings.</div>`;
             }
         }
 
@@ -448,7 +363,7 @@
             container.innerHTML = '';
             
             if (state.models.length === 0) {
-                container.innerHTML = `<div class="text-xs text-slate-400">No models detected on server.</div>`;
+                container.innerHTML = `<div class="text-xs text-slate-400">No models found.</div>`;
                 return;
             }
 
@@ -460,24 +375,17 @@
                 div.className = "p-3 bg-slate-800 rounded-xl border border-slate-700 flex justify-between items-center";
                 div.innerHTML = `
                     <div class="overflow-hidden mr-2">
-                        <div class="text-xs font-mono font-medium text-slate-200 truncate flex items-center gap-1.5">
+                        <div class="text-xs font-mono font-medium text-slate-200 truncate">
                             ${escapeHtml(m.id)}
-                            ${isLoaded ? '<span class="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded font-semibold">Active In Memory</span>' : ''}
                         </div>
-                        <div class="text-[10px] text-slate-400">Publisher: ${escapeHtml(m.owned_by || 'local')}</div>
                     </div>
                     <div class="flex gap-1 shrink-0">
-                        ${isLoaded ? `
-                            <button onclick="unloadSpecificModel('${escapeHtml(m.id)}')" class="px-2.5 py-1.5 text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-500/30 rounded-lg transition">
-                                Unload
-                            </button>
-                        ` : ''}
                         <button onclick="loadModel('${escapeHtml(m.id)}')" ${isLoading || isLoaded ? 'disabled' : ''} 
-                            class="px-3 py-1.5 text-xs rounded-lg transition font-medium flex items-center gap-1 ${
+                            class="px-3 py-1.5 text-xs rounded-lg transition font-medium ${
                                 isLoaded ? 'bg-slate-700 text-slate-400 cursor-not-allowed' :
                                 isLoading ? 'bg-yellow-600 text-white cursor-wait' : 'bg-blue-600 hover:bg-blue-500 text-white'
                             }">
-                            ${isLoading ? '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Loading' : isLoaded ? 'Loaded' : 'Load'}
+                            ${isLoading ? 'Loading...' : isLoaded ? 'Loaded' : 'Load'}
                         </button>
                     </div>
                 `;
@@ -493,38 +401,6 @@
             showToast(`Loading ${modelId}...`, "info");
 
             const tryEndpoints = [`/api/v1/models/load`, `/api/v0/models/load`];
-            let success = false;
-
-            for (const ep of tryEndpoints) {
-                try {
-                    const res = await fetch(`${state.config.endpoint}${ep}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ model: modelId, instance_id: modelId })
-                    });
-                    if (res.ok) {
-                        success = true;
-                        break;
-                    }
-                } catch(e) {}
-            }
-
-            state.loadingModelId = null;
-            state.loadedModel = modelId;
-
-            if (success) {
-                showToast(`Model ${modelId} loaded into VRAM!`, "success");
-            } else {
-                showToast(`Selected ${modelId} (LM Studio JIT dynamic load)`, "info");
-            }
-
-            renderActiveModelUI();
-            renderModelsList();
-        }
-
-        async function unloadSpecificModel(modelId) {
-            showToast(`Unloading ${modelId}...`, "info");
-            const tryEndpoints = [`/api/v1/models/unload`, `/api/v0/models/unload`];
             for (const ep of tryEndpoints) {
                 try {
                     await fetch(`${state.config.endpoint}${ep}`, {
@@ -535,21 +411,30 @@
                 } catch(e) {}
             }
 
-            if (state.loadedModel === modelId) state.loadedModel = null;
+            state.loadingModelId = null;
+            state.loadedModel = modelId;
             renderActiveModelUI();
             renderModelsList();
-            showToast(`Unloaded ${modelId} from VRAM.`, "success");
+            showToast(`Selected ${modelId}`, "success");
         }
 
         async function unloadModel() {
-            if (!state.loadedModel) {
-                showToast("No active model detected.", "info");
-                return;
-            }
-            await unloadSpecificModel(state.loadedModel);
+            if (!state.loadedModel) return;
+            showToast(`Unloading ${state.loadedModel}...`, "info");
+            try {
+                await fetch(`${state.config.endpoint}/api/v1/models/unload`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: state.loadedModel, instance_id: state.loadedModel })
+                });
+            } catch(e) {}
+            state.loadedModel = null;
+            renderActiveModelUI();
+            renderModelsList();
+            showToast(`Model unloaded.`, "success");
         }
 
-        // CHAT ENGINE
+        // CHAT CONTROLLER
         function createNewChat() {
             const newChat = { id: Date.now().toString(), title: 'New Chat', messages: [] };
             state.chats.unshift(newChat);
@@ -576,7 +461,7 @@
         }
 
         function clearAllChats() {
-            if (confirm("Are you sure you want to delete all chat history?")) {
+            if (confirm("Delete all chat history?")) {
                 state.chats = [];
                 createNewChat();
             }
@@ -621,7 +506,7 @@
                     <div id="welcome-msg" class="text-center my-auto py-12 text-slate-400">
                         <i data-lucide="bot" class="w-12 h-12 mx-auto mb-3 text-blue-400 opacity-80"></i>
                         <p class="text-base font-medium text-slate-200">LM Studio Local AI</p>
-                        <p class="text-xs mt-1">Make sure LM Studio local server is running with CORS enabled.</p>
+                        <p class="text-xs mt-1">Ready to chat! Type a message below to start.</p>
                     </div>`;
                 lucide.createIcons();
                 return;
@@ -690,22 +575,11 @@
             }
 
             if (currentChat.messages.length === 0) {
-                currentChat.title = text.slice(0, 30) || (state.attachments[0] ? state.attachments[0].name : "Attachment Chat");
-            }
-
-            let msgPayloadContent;
-            if (images.length > 0) {
-                msgPayloadContent = [];
-                if (fullUserContent) msgPayloadContent.push({ type: "text", text: fullUserContent });
-                images.forEach(img => {
-                    msgPayloadContent.push({ type: "image_url", image_url: { url: img } });
-                });
-            } else {
-                msgPayloadContent = fullUserContent;
+                currentChat.title = text.slice(0, 30) || "Chat Session";
             }
 
             appendMessageUI('user', fullUserContent, images);
-            currentChat.messages.push({ role: 'user', content: msgPayloadContent, images });
+            currentChat.messages.push({ role: 'user', content: fullUserContent, images });
             saveStateToStorage();
 
             inputEl.value = '';
@@ -719,7 +593,6 @@
 
             currentChat.messages.forEach(m => apiMessages.push({ role: m.role, content: m.content }));
 
-            // Target Payload Construction
             const targetModel = state.loadedModel || (state.models[0] ? state.models[0].id : "");
 
             const bodyPayload = {
@@ -727,24 +600,13 @@
                 messages: apiMessages,
                 temperature: state.config.temperature,
                 top_p: state.config.topP,
-                stream: state.config.stream
+                stream: false
             };
 
-            if (state.config.maxTokens > 0) bodyPayload.max_tokens = state.config.maxTokens;
-            if (state.config.topK) bodyPayload.top_k = state.config.topK;
-            if (state.config.repeatPenalty) bodyPayload.repeat_penalty = state.config.repeatPenalty;
-            if (state.config.presencePenalty) bodyPayload.presence_penalty = state.config.presencePenalty;
-            if (state.config.frequencyPenalty) bodyPayload.frequency_penalty = state.config.frequencyPenalty;
-
-            if (state.config.stopSequences) {
-                try { bodyPayload.stop = JSON.parse(state.config.stopSequences); }
-                catch(e) { bodyPayload.stop = [state.config.stopSequences]; }
-            }
-
-            const assistantBubble = appendMessageUI('assistant', '...');
-            let assistantFullResponse = "";
+            const assistantBubble = appendMessageUI('assistant', '<i>Thinking...</i>');
 
             try {
+                // Fetch with no-cors / standard handling
                 const res = await fetch(`${state.config.endpoint}/v1/chat/completions`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -753,48 +615,21 @@
 
                 if (!res.ok) {
                     const errText = await res.text();
-                    throw new Error(`HTTP ${res.status}: ${errText || res.statusText}`);
+                    throw new Error(`Server returned status ${res.status}: ${errText}`);
                 }
 
-                if (state.config.stream) {
-                    const reader = res.body.getReader();
-                    const decoder = new TextDecoder('utf-8');
-                    assistantBubble.innerHTML = "";
-
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) break;
-                        const chunk = decoder.decode(value, { stream: true });
-                        const lines = chunk.split('\n');
-                        
-                        for (const line of lines) {
-                            if (line.startsWith('data: ')) {
-                                const jsonStr = line.replace('data: ', '').trim();
-                                if (jsonStr === '[DONE]') break;
-                                try {
-                                    const parsed = JSON.parse(jsonStr);
-                                    const delta = parsed.choices[0]?.delta?.content || '';
-                                    assistantFullResponse += delta;
-                                    assistantBubble.innerHTML = marked.parse(assistantFullResponse);
-                                } catch (e) {}
-                            }
-                        }
-                    }
-                } else {
-                    const data = await res.json();
-                    assistantFullResponse = data.choices[0]?.message?.content || "";
-                    assistantBubble.innerHTML = marked.parse(assistantFullResponse);
-                }
+                const data = await res.json();
+                const assistantFullResponse = data.choices?.[0]?.message?.content || "No response received.";
+                assistantBubble.innerHTML = marked.parse(assistantFullResponse);
 
                 currentChat.messages.push({ role: 'assistant', content: assistantFullResponse });
                 saveStateToStorage();
 
             } catch (err) {
-                assistantBubble.innerHTML = `<span class="text-red-400 font-semibold">Error communicating with LM Studio: ${escapeHtml(err.message)}</span>`;
+                assistantBubble.innerHTML = `<span class="text-red-400 font-semibold">CORS/Network Error: Could not talk to LM Studio.<br><span class="text-xs text-slate-300">Ensure "Enable CORS" is ON in LM Studio server settings. (${escapeHtml(err.message)})</span></span>`;
             }
         }
 
-        // ATTACHMENT PARSER
         async function handleFileSelect(e) {
             const files = Array.from(e.target.files);
             for (const file of files) {
